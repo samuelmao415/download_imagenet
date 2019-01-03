@@ -10,14 +10,11 @@ def download_imagenet(list,filedir,imagename):
     for i in list:
         order=order+1
         filename = filedir+imagename+str(order)+'.jpg'
-            # test connection headers={"Host": "reddit.com"})
         try:
-            timeout=1 #not sure if this is working
-            socket.setdefaulttimeout(timeout)
             session = requests.Session()
             session.max_redirects = 10 #this limits the maximum number of redirects
             try:
-                imageConnection = session.get(i) # get response from link
+                imageConnection = session.get(i, timeout=(5, 14)) # get response from link with time out option: connect 5s, read 14s
                 print(imageConnection.url)
                 if 'photo_unavailable.png' in imageConnection.url: #dont download empty images from image net
                     print(str(order)+' is a blank image')
@@ -38,21 +35,22 @@ def download_imagenet(list,filedir,imagename):
                 else: # skip and log if image link is invalid
                     print(str(i)+" is invalid!")
                     continue
-            except requests.exceptions.TooManyRedirects and requests.exceptions.MissingSchema: #avoid giving redirects instruction
-                print("either too many requests or missing schema (url)")
+            #except requests.exceptions.TooManyRedirects or requests.exceptions.MissingSchema or http.client.IncompleteRead or requests.exceptions.Timeout: #avoid giving redirects instruction
+            except requests.exceptions.RequestException or http.client.IncompleteRead as e:
+                print(e)
                 continue
 
         except requests.exceptions.ConnectionError: #continue if the request is blocked
             print('!request failed!'+str(order))
             continue
-            print("job all finished")
+    print("job all finished")
 
 
 
-text_file = open("instrument.txt", "r",encoding='utf8')
+text_file = open("headphone.txt", "r",encoding='utf8')
 list = text_file.read().split('\n')
 text_file.close()
-filedir='./instrument/'
-imagename='instrument'
-list=list[980:1000]
+filedir='./headphone/'
+imagename='headphone'
+list=list[330:335]
 download_imagenet(list,filedir,imagename)
