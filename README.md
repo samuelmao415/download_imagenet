@@ -20,3 +20,6 @@ https://stackoverflow.com/questions/9330309/how-to-copy-entire-folder-from-amazo
 https://www.youtube.com/watch?v=GFTsU_XRXEg
 
 
+
+
+$ ssh -i xxx.pem ubuntu@xxx.amazonaws.com
