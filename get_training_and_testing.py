@@ -3,11 +3,23 @@ from math import floor #floor makes a number into integer
 import shutil
 #https://stackoverflow.com/questions/42471570/how-to-split-documents-into-training-set-and-test-set
 
-datadir = 'C:/Users/samuelmao/Desktop/wardrobe_detection/phone'
+#change file names in a file directory
+import os
+import glob
+files = glob.glob('./condom/*')
+len(files)
+for i,file in enumerate(files):
+    new_name='./condom/' +'condom_'+ str(i)+'.jpg'
+    os.rename(file, new_name)
+    
+
+
+#divide files into training and testing
+datadir = 'C:/Users/samuelmao/Desktop/wardrobe_detection/animals'
 format = '.jpg'
 split = 0.8
-train_folder_path = 'C:/Users/samuelmao/Desktop/wardrobe_detection/phone/train'
-test_folder_path = 'C:/Users/samuelmao/Desktop/wardrobe_detection/phone/test'
+train_folder_path = 'C:/Users/samuelmao/Desktop/wardrobe_detection/animals/train'
+test_folder_path = 'C:/Users/samuelmao/Desktop/wardrobe_detection/animals/test'
 
 def get_training_and_testing_sets(datadir,split,train_folder_path,test_folder_path):
     def get_file_list_from_dir(datadir,format):
