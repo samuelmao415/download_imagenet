@@ -7,7 +7,6 @@ from keras.preprocessing.image import ImageDataGenerator
 
 train_dir = './image/wardrobe_nonwardrobe/train'
 validation_dir = './image/wardrobe_nonwardrobe/test'
-testing_dir = './image/wardrobe_nonwardrobe/testing'
 #\\tsclient\C\Users\samuelmao\Desktop\wardrobe_detection
 # train_datagen= ImageDataGenerator(
 #         rotation_range=40,
@@ -45,17 +44,15 @@ train_sample=len(data_datagen.flow_from_directory(train_dir).filenames)
 
 val_sample=len(data_datagen.flow_from_directory(validation_dir).filenames)
 
-testing_sample = len(data_datagen.flow_from_directory(testing_dir).filenames)
 
 train_features, train_labels = extract_features(train_dir,train_sample)
 print("extracted training feature")
 validation_features, validation_labels = extract_features(validation_dir,val_sample)
 
-testing_features, testing_labels = extract_features(testing_dir,testing_sample)
 
 train_features = np.reshape(train_features,(train_sample,4*4*512))
 validation_features = np.reshape(validation_features,(val_sample,4*4*512))
-testing_features = np.reshape(testing_features,(testing_sample,4*4*512))
+
 
 from keras import models
 from keras import layers
@@ -130,28 +127,67 @@ callbacks=[early, checkpoint])
 model1.save('vgg_saved.h5')
 
 ### predict and visualize outcome
+testing_batch_size = 1
+def extract_testing_features(directory,sample_count):
+    features=np.zeros(shape=(sample_count,4,4,512))
+    labels=np.zeros(shape=(sample_count))
+    generator = data_datagen.flow_from_directory(
+    directory,
+    target_size=(150,150),
+    batch_size=testing_batch_size,
+    class_mode='binary',
+    shuffle=False
+    )
+    i=0
+    for inputs_batch, labels_batch in generator:
+        features_batch=conv_base.predict(inputs_batch)
+        features[i*testing_batch_size:(i+1)*testing_batch_size] = features_batch
+        labels[i*testing_batch_size:(i+1)*testing_batch_size]=labels_batch
+        i+=1
+        print(i,str(directory))
+        if i * testing_batch_size >= sample_count:
+            break
+    return features, labels
+testing_dir = './image/wardrobe_nonwardrobe/testing'
+testing_sample = len(data_datagen.flow_from_directory(testing_dir).filenames)
+testing_features, testing_labels = extract_testing_features(testing_dir,testing_sample)
+testing_features = np.reshape(testing_features,(testing_sample,4*4*512))
+
+
 from keras.preprocessing import image
 from keras.models import load_model
-model = load_model('vgg_saved.h5', custom_objects={'fmeasure':fmeasure})
+model = load_model('vgg16.hdf5', custom_objects={'fmeasure':fmeasure})
 model.compile(loss='binary_crossentropy',
     optimizer=optimizers.Adam(),
     metrics=[fmeasure])
-
 img_arrays = np.expand_dims(testing_features, axis=0)
-preds = [model.predict_classes(x) for x in img_arrays]
+#rename testing order because it uses sorted(os.listdir(directory))
+preds = [model.predict_classes(x, verbose=1) for x in img_arrays]
 preds
 
+
+# predictions
+
+def get_file_list_from_dir(datadir,format):
+    all_files = os.listdir(os.path.realpath(datadir))
+    data_files = list(filter(lambda file: file.endswith(format), all_files))
+    return data_files
+img_path = 'image/wardrobe_nonwardrobe/testing/testing_sub/'
+format= 'jpg'
+file_list = get_file_list_from_dir(img_path,format)
+files=[img_path + x for x in file_list]
 
 import matplotlib.pyplot as plt
 import cv2
 
 f, ax = plt.subplots(6, 6, figsize = (15, 15))
-for i in range(0,36):
+for i in range(0,len(files)):
     imgBGR = cv2.imread(files[i])
     imgRGB = cv2.cvtColor(imgBGR, cv2.COLOR_BGR2RGB)
 
     # a if condition else b
     predicted_class = "wardrobe" if preds[0][i]==1 else "non_wardrobe"
+    #predicted_class = "wardrobe" if predicted_class_indices[i] else "non_wardrobe"   #check if dog is one
 
     ax[i//6, i%6].imshow(imgRGB)
     ax[i//6, i%6].axis('off')
